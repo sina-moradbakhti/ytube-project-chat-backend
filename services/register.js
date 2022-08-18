@@ -5,7 +5,7 @@ const jwtExpirySeconds = process.env.JWTES
 const MongoClient = require('mongodb').MongoClient
 const bcryptjs = require('bcryptjs')
 
-const register = (req, res) => {
+const register = async (req, res) => {
     const fullName = req.body.fullname
     const userName = req.body.username
     const password = req.body.password
@@ -26,11 +26,11 @@ const register = (req, res) => {
         return
     }
 
-    MongoClient.connect(process.env.MONGO_URL, function (err, db) {
+    MongoClient.connect(process.env.MONGO_URL, async function (err, db) {
         if (err) console.log(err)
         const dbo = db.db(process.env.DB_NAME)
 
-        const saltyPassword = bcryptjs.hash(password, process.env.SALT)
+        const saltyPassword = await bcryptjs.hash(password, process.env.SALT)
         const user = {
             fullName: fullName,
             userName: userName,

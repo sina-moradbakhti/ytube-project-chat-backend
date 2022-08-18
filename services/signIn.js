@@ -5,7 +5,7 @@ const jwtExpirySeconds = process.env.JWTES
 const MongoClient = require('mongodb').MongoClient
 const bcryptjs = require('bcryptjs')
 
-const signIn = (req, res) => {
+const signIn = async (req, res) => {
     const userName = req.body.username
     const password = req.body.password
 
@@ -25,12 +25,13 @@ const signIn = (req, res) => {
         return
     }
 
-    MongoClient.connect(process.env.MONGO_URL, function (err, db) {
+    MongoClient.connect(process.env.MONGO_URL, async function (err, db) {
         if (err) console.log(err)
         const dbo = db.db(process.env.DB_NAME)
+        const safePassword = await bcryptjs.hash(password, process.env.SALT)
         dbo.collection("users").findOne({
             userName: userName,
-            password: bcryptjs.hash(password, process.env.SALT)
+            password: safePassword
         }, (err, result) => {
             if (err) console.log(err)
             if (result == null) {
@@ -49,7 +50,7 @@ const signIn = (req, res) => {
 
                 dbo.collection("users").updateOne({
                     userName: userName,
-                    password: bcryptjs.hash(password, process.env.SALT)
+                    password: safePassword
                 }, {
                     $set: {
                         token: token

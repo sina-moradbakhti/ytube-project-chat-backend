@@ -65,7 +65,6 @@ io.on('connection', async (socket) => {
             const filteredUsers = users.filter((elem) => elem.userId == event.to)
             if (filteredUsers.length > 0) {
                 filteredUsers.forEach((socketItem) => {
-                    console.log(socketItem)
                     socket.broadcast.to(socketItem.socketId).emit('onMessage', {
                         'message': event.message,
                         'from': userId
