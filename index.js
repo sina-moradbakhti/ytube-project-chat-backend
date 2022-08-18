@@ -62,14 +62,13 @@ io.on('connection', async (socket) => {
             });
         } else {
             // individually
-            console.log(`user ${userId} sent a message to ${event.to} > ${event.message}`)
             const filteredUsers = users.filter((elem) => elem.userId == event.to)
             if (filteredUsers.length > 0) {
-                const receiverSocketId = filteredUsers[0].socketId
-                socket.broadcast.to(receiverSocketId).emit('onMessage', {
+                socket.broadcast.to(filteredUsers[0].socketId).emit('onMessage', {
                     'message': event.message,
                     'from': userId
                 })
+                console.log(`user ${userId} sent a message to ${event.to} > ${event.message}`)
             }
         }
     });
