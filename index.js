@@ -15,7 +15,10 @@ const io = require('socket.io')(server)
 const registerService = require('./services/register')
 const signInService = require('./services/signIn')
 const clearUsersService = require('./services/clear')
-const getUserIdFromToken = require('./services/getUserIdFromToken')
+const getUserFromToken = require('./services/getUserFromToken')
+const newContact = require('./services/new-contact')
+// Models
+const SocketUser = require('./models/user.socket')
 
 // Variables
 const port = process.env.PORT || 3000
@@ -23,32 +26,35 @@ const users = []
 
 // Socket.io
 io.on('connection', async (socket) => {
-    const socketId = socket.id;
     const token = socket.handshake.query.token;
     // Check token (Authentication)
-    const checkedToken = await getUserIdFromToken(token)
-    if (checkedToken == null) {
+    const checkedTokenData = await getUserFromToken(token)
+    if (checkedTokenData == null) {
         socket.disconnect()
         return
     }
 
-    const userId = checkedToken.data._id;
-    users.push({
-        userId: userId,
-        socketId: socketId
+    const user = new SocketUser({
+        socketId: socket.id,
+        userId: checkedTokenData.data._id,
+        username: checkedTokenData.data.userName,
+        fullname: checkedTokenData.data.fullName,
+        token: token
     })
-    console.log(`a new socket connection (${userId})`)
+    // Push userdata inside "users" list
+    users.push(user)
+    console.log(`a new socket connection (${user.userId})`)
 
     // Join a person to a new room
     socket.on('join-room', (event) => {
         socket.join(`ROOMID::${event.roomId}`)
-        console.log(`user ${userId} join to a room ${event.roomId}`)
+        console.log(`user ${user.userId} join to a room ${event.roomId}`)
     })
 
     // Leave a person from a room
     socket.on('leave-room', (event) => {
         socket.leave(`ROOMID::${event.roomId}`)
-        console.log(`user ${userId} left the room ${event.roomId}`)
+        console.log(`user ${user.userId} left the room ${event.roomId}`)
     })
 
     // Send message
@@ -57,7 +63,7 @@ io.on('connection', async (socket) => {
             // Multi persons
             io.to(`ROOMID::${event.roomId}`).emit('onMessage', {
                 'message': event.message,
-                'from': userId,
+                'from': user,
                 'roomId': event.roomId
             });
         } else {
@@ -67,9 +73,9 @@ io.on('connection', async (socket) => {
                 filteredUsers.forEach((socketItem) => {
                     socket.broadcast.to(socketItem.socketId).emit('onMessage', {
                         'message': event.message,
-                        'from': userId
+                        'from': user
                     })
-                    console.log(`user ${userId} sent a message to ${socketItem.socketId} > ${event.message}`)
+                    console.log(`user ${user.userId} sent a message to ${socketItem.socketId} > ${event.message}`)
                 });
             }
         }
@@ -77,7 +83,7 @@ io.on('connection', async (socket) => {
 
     // Disconnect
     socket.on('disconnect', (event) => {
-        console.log(`user (${userId}) disconnected`)
+        console.log(`user (${user.userId}) disconnected`)
         const index = users.indexOf((elem) => elem.userId == userId);
         users.slice(index, 1)
     });
@@ -90,6 +96,7 @@ app.get('/', (req, res) => {
 
 app.post('/register', registerService)
 app.post('/signin', signInService)
+app.post('/new-contact', newContact)
 app.get('/clearUsers', clearUsersService)
 
 // Server Listener

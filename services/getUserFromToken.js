@@ -1,9 +1,8 @@
+const mongoConnector = require('./../db/mongo-connector')
 const jwt = require('jsonwebtoken')
 const jwtKey = process.env.JWTT
 
-const MongoClient = require('mongodb').MongoClient
-
-async function getUserIdFromToken(token) {
+async function getUserFromToken(token) {
     if (token == undefined || token == '') {
         return null
     }
@@ -16,8 +15,8 @@ async function getUserIdFromToken(token) {
     }
 
     try {
-        const db = await MongoClient.connect(process.env.MONGO_URL)
-        const dbo = db.db(process.env.DB_NAME)
+        const database = await mongoConnector()
+        const dbo = database.db(process.env.DB_NAME)
         const user = await dbo.collection("users").findOne({
             token: token
         })
@@ -46,4 +45,4 @@ async function getUserIdFromToken(token) {
 
 }
 
-module.exports = getUserIdFromToken
+module.exports = getUserFromToken

@@ -1,8 +1,9 @@
+const mongoConnector = require('./../db/mongo-connector')
 const jwt = require('jsonwebtoken')
 const jwtKey = process.env.JWTT
 const jwtExpirySeconds = process.env.JWTES
 
-const MongoClient = require('mongodb').MongoClient
+
 const bcryptjs = require('bcryptjs')
 
 const register = async (req, res) => {
@@ -26,50 +27,47 @@ const register = async (req, res) => {
         return
     }
 
-    MongoClient.connect(process.env.MONGO_URL, async function (err, db) {
+    const db = await mongoConnector()
+    const dbo = db.db(process.env.DB_NAME)
+
+    const saltyPassword = await bcryptjs.hash(password, process.env.SALT)
+    const user = {
+        fullName: fullName,
+        userName: userName,
+        password: saltyPassword,
+        token: ''
+    }
+
+    dbo.collection("users").findOne({
+        userName: userName
+    }, (err, result) => {
         if (err) console.log(err)
-        const dbo = db.db(process.env.DB_NAME)
+        if (result == null) {
 
-        const saltyPassword = await bcryptjs.hash(password, process.env.SALT)
-        const user = {
-            fullName: fullName,
-            userName: userName,
-            password: saltyPassword,
-            token: ''
+            const token = jwt.sign({
+                userName
+            }, jwtKey, {
+                algorithm: 'HS256',
+                expiresIn: jwtExpirySeconds
+            })
+            user.token = token
+
+            dbo.collection("users").insertOne(user, function (err, result) {
+                if (err) console.log(err)
+                result['token'] = token
+                res.status(200).json({
+                    message: 'user registered successfully',
+                    error_code: 'success',
+                    data: result
+                })
+                db.close()
+            })
+        } else {
+            res.status(400).json({
+                message: 'this username is taken already!',
+                error_code: 'user_exist'
+            })
         }
-
-        dbo.collection("users").findOne({
-            userName: userName
-        }, (err, result) => {
-            if (err) console.log(err)
-            if (result == null) {
-
-                const token = jwt.sign({
-                    userName
-                }, jwtKey, {
-                    algorithm: 'HS256',
-                    expiresIn: jwtExpirySeconds
-                })
-                user.token = token
-
-                dbo.collection("users").insertOne(user, function (err, result) {
-                    if (err) console.log(err)
-                    result['token'] = token
-                    res.status(200).json({
-                        message: 'user registered successfully',
-                        error_code: 'success',
-                        data: result
-                    })
-                    db.close()
-                })
-            } else {
-                res.status(400).json({
-                    message: 'this username is taken already!',
-                    error_code: 'user_exist'
-                })
-            }
-        })
-
     })
 }
 
