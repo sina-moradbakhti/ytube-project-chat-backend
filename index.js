@@ -17,6 +17,7 @@ const signInService = require('./services/signIn')
 const clearUsersService = require('./services/clear')
 const getUserFromToken = require('./services/getUserFromToken')
 const newContact = require('./services/new-contact')
+const tokenFresher = require('./services/token-fresher')
 // Models
 const SocketUser = require('./models/user.socket')
 
@@ -29,10 +30,12 @@ io.on('connection', async (socket) => {
     const token = socket.handshake.query.token;
     // Check token (Authentication)
     const checkedTokenData = await getUserFromToken(token)
-    if (checkedTokenData == null) {
+    if (checkedTokenData.data == null) {
         socket.disconnect()
         return
     }
+
+    console.log(checkedTokenData)
 
     const user = new SocketUser({
         socketId: socket.id,
@@ -97,6 +100,7 @@ app.get('/', (req, res) => {
 app.post('/register', registerService)
 app.post('/signin', signInService)
 app.post('/new-contact', newContact)
+app.post('/token-fresher', tokenFresher)
 app.get('/clearUsers', clearUsersService)
 
 // Server Listener
