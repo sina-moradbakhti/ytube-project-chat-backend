@@ -1,26 +1,24 @@
 const mongoConnector = require('./../db/mongo-connector')
-const jwt = require('jsonwebtoken')
-const jwtKey = process.env.JWTT
 
 async function sendMessageOffline(fromId, toId, message) {
-    if (
-        (fromId == undefined || toId == undefined || message == undefined) &&
-        message == '') {
+    if ((fromId == undefined || toId == undefined || message == undefined) ||
+        message == ''
+    ) {
         return null
     }
 
     try {
         const database = await mongoConnector()
         const dbo = database.db(process.env.DB_NAME)
-        const messages = await dbo.collection("messages").insertOne({
-            message: message,
+        const insertedMessage = await dbo.collection("messages_" + toId).insertOne({
             fromId: fromId,
-            toId: toId
+            message: message,
+            dateTime: new Date()
         })
 
-        if (messages == null) {
+        if (insertedMessage == null) {
             return {
-                message: 'Inserting message was failed',
+                message: '',
                 error_code: 'failed',
                 data: {
                     status: false
@@ -28,7 +26,7 @@ async function sendMessageOffline(fromId, toId, message) {
             }
         } else {
             return {
-                message: 'offline message inserted',
+                message: 'message sent',
                 error_code: 'success',
                 data: {
                     status: true
@@ -39,7 +37,7 @@ async function sendMessageOffline(fromId, toId, message) {
     } catch (err) {
         if (err) console.log(err)
         return {
-            message: err,
+            message: '',
             error_code: 'failed',
             data: {
                 status: false

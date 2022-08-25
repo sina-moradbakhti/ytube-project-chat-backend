@@ -1,11 +1,8 @@
 const mongoConnector = require('./../db/mongo-connector')
 const jwt = require('jsonwebtoken')
-const {
-    ObjectId
-} = require('mongodb')
 const jwtKey = process.env.JWTT
 
-const getOfflineMessages = async (req, res) => {
+const getLatestOfflineMessages = async (req, res) => {
     const token = req.headers.authorization
     const userId = req.body.userId
 
@@ -40,49 +37,41 @@ const getOfflineMessages = async (req, res) => {
 
     const database = await mongoConnector()
     const dbo = database.db(process.env.DB_NAME)
-    withoutBarearToken = token.replace('Bearer ', '')
+
     try {
-        const userObject = await dbo.collection("users").findOne({
-            _id: ObjectId(userId),
-            token: withoutBarearToken
-        });
-
-
-        if (userObject != null) {
-            const offlineMessagesList = await dbo.collection("messages").aggregate(
-                [{
+        const messagesCollection = await dbo.collection("messages_" + userId)
+            .aggregate([{
                     $lookup: {
                         from: 'users',
                         localField: 'fromId',
                         foreignField: '_id',
                         as: 'user'
                     }
-                }, {
-                    $match: {
-                        toId: userId
+                },
+                {
+                    $project: {
+                        'message': 1,
+                        'user._id': 1,
+                        'user.fullName': 1,
+                        'user.userName': 1
                     }
-                }]).toArray()
-
-            if (offlineMessagesList != null) {
-                res.status(200).json({
-                    message: '',
-                    error_code: 'success',
-                    data: offlineMessagesList
-                })
-            } else {
-                res.status(400).json({
-                    message: '',
-                    error_code: 'failed',
-                    data: null
-                })
-            }
-
-        }
-
-
+                }
+            ])
+            .toArray();
+        res.status(200).json({
+            message: '',
+            error_code: 'success',
+            data: messagesCollection
+        })
     } catch (er) {
         console.log(er)
+        res.status(400).json({
+            message: er,
+            error_code: 'failed',
+            data: null
+        })
     }
+
 }
 
-module.exports = getOfflineMessages
+module.exports = getLatestOfflineMessages
