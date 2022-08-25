@@ -20,6 +20,7 @@ const newContact = require('./services/new-contact')
 const tokenFresher = require('./services/token-fresher')
 const sendMessageOffline = require('./services/sendMessageOffline')
 const getLatestOfflineMessages = require('./services/getLatestOfflineMessages')
+const clearLatestOfflineMessages = require('./services/clearLatestOfflineMessages')
 // Models
 const SocketUser = require('./models/user.socket')
 
@@ -108,7 +109,8 @@ app.post('/register', registerService)
 app.post('/signin', signInService)
 app.post('/new-contact', newContact)
 app.post('/token-fresher', tokenFresher)
-app.post('/get-latest-offline-messages', getLatestOfflineMessages);
+app.post('/get-latest-offline-messages', getLatestOfflineMessages)
+app.post('/clear-latest-offline-messages', clearLatestOfflineMessages)
 app.get('/clearUsers', clearUsersService)
 
 // Server Listener

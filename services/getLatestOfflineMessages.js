@@ -51,6 +51,7 @@ const getLatestOfflineMessages = async (req, res) => {
                 {
                     $project: {
                         'message': 1,
+                        'dateTime': 1,
                         'user._id': 1,
                         'user.fullName': 1,
                         'user.userName': 1
