@@ -18,8 +18,10 @@ const clearUsersService = require('./services/clear')
 const getUserFromToken = require('./services/getUserFromToken')
 const newContact = require('./services/new-contact')
 const tokenFresher = require('./services/token-fresher')
+const getOfflineMessages = require('./services/offlineMessages')
 // Models
 const SocketUser = require('./models/user.socket')
+const sendMessageOffline = require('./services/sendMessageOffline')
 
 // Variables
 const port = process.env.PORT || 3000
@@ -34,8 +36,6 @@ io.on('connection', async (socket) => {
         socket.disconnect()
         return
     }
-
-    console.log(checkedTokenData)
 
     const user = new SocketUser({
         socketId: socket.id,
@@ -80,6 +80,12 @@ io.on('connection', async (socket) => {
                     })
                     console.log(`user ${user.userId} sent a message to ${socketItem.socketId} > ${event.message}`)
                 });
+            } else {
+                sendMessageOffline(user.userId, event.to, event.message).then(result => {
+                    if (result.data.status) {
+                        console.log(`user ${user.userId} sent an offline message to ${event.to} > ${event.message}`)
+                    }
+                })
             }
         }
     });
@@ -101,6 +107,7 @@ app.post('/register', registerService)
 app.post('/signin', signInService)
 app.post('/new-contact', newContact)
 app.post('/token-fresher', tokenFresher)
+app.post('/get-messages', getOfflineMessages)
 app.get('/clearUsers', clearUsersService)
 
 // Server Listener
