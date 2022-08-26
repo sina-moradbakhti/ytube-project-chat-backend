@@ -7,6 +7,12 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
+// Multer (uploading files dependency)
+const multer = require('multer')
+const uploadMiddleware = multer({
+    dest: process.env.MULTER_TEMP_PATH
+});
+
 const http = require('http')
 const server = http.createServer(app)
 const io = require('socket.io')(server)
@@ -21,6 +27,8 @@ const tokenFresher = require('./services/token-fresher')
 const sendMessageOffline = require('./services/sendMessageOffline')
 const getLatestOfflineMessages = require('./services/getLatestOfflineMessages')
 const clearLatestOfflineMessages = require('./services/clearLatestOfflineMessages')
+const uploadAvatarService = require('./services/uploadAvatarService')
+const showAvatarService = require('./services/showAvatarService')
 // Models
 const SocketUser = require('./models/user.socket')
 
@@ -111,6 +119,9 @@ app.post('/new-contact', newContact)
 app.post('/token-fresher', tokenFresher)
 app.post('/get-latest-offline-messages', getLatestOfflineMessages)
 app.post('/clear-latest-offline-messages', clearLatestOfflineMessages)
+app.put('/upload-avatar', uploadMiddleware.single('avatar'), uploadAvatarService)
+app.get('/avatar/:userId', showAvatarService)
+
 app.get('/clearUsers', clearUsersService)
 
 // Server Listener
