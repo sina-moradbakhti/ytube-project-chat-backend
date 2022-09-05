@@ -7,6 +7,9 @@ const jwtKey = process.env.JWTT
 const initService = async (req, res) => {
     const token = req.headers.authorization
     const userId = req.body.userId
+    const latestDates = JSON.parse(req.body.latestDates)
+
+    console.log('latestDates: ', latestDates)
 
     if (userId == undefined) {
         res.status(400).json({
@@ -39,7 +42,7 @@ const initService = async (req, res) => {
 
     try {
         const messagesCollection = await getLatestOfflineMessages(userId)
-        const roomsCollection = await getLatestRooms(userId)
+        const roomsCollection = await getLatestRooms(userId, latestDates)
         res.status(200).json({
             message: '',
             error_code: 'success',

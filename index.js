@@ -33,6 +33,7 @@ const showRoomAvatarService = require('./services/showRoomAvatarService')
 const initService = require('./services/initService')
 // Models
 const SocketUser = require('./models/user.socket')
+const saveMessagesInRoom = require('./services/saveMessageInRoom')
 
 // Variables
 const port = process.env.PORT || 3000
@@ -80,6 +81,7 @@ io.on('connection', async (socket) => {
                 'from': user,
                 'roomId': event.roomId
             });
+            saveMessagesInRoom(event.roomId, user.userId, event.message)
         } else {
             // individually
             const filteredUsers = users.filter((elem) => elem.userId == event.to)
@@ -97,7 +99,6 @@ io.on('connection', async (socket) => {
                         console.log(`user ${user.userId} sent a offline message to ${event.to} > ${event.message}`)
                     }
                 })
-
             }
         }
     });
